@@ -1,290 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>CyberCert Academy</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Tailwind -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CyberCert</title>
+  <!-- Tailwind CDN (fine for demo / portfolio) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-  <!-- Babel -->
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- Lucide -->
-  <script src="https://unpkg.com/lucide-react@latest/umd/lucide-react.min.js"></script>
-
-  <!-- Question Bank -->
-  <script src="./questions.js"></script>
+  <!-- Lucide Icons (plain JS) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Favicon placeholder -->
+  <link rel="icon" href="data:,">
 </head>
+<body class="bg-gray-100 text-gray-800 font-sans">
 
-<body class="bg-slate-50">
-  <div id="root"></div>
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-4">Quiz App</h1>
+    <div id="quiz-container" class="space-y-4">
+      <!-- Questions will be injected here -->
+    </div>
+    <button id="submit-btn" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      Submit
+    </button>
+  </div>
 
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-    const {
-      Shield, CheckCircle, XCircle, Download, Lock, Key, Clock
-    } = lucideReact;
+  <!-- Questions file -->
+  <script type="text/javascript" src="questions.js"></script>
 
-    function CyberSecurityCertApp() {
-      const [view, setView] = useState("home");
-      const [name, setName] = useState("");
-      const [questions, setQuestions] = useState([]);
-      const [current, setCurrent] = useState(0);
-      const [answers, setAnswers] = useState([]);
-      const [timeLeft, setTimeLeft] = useState(900);
-      const [cert, setCert] = useState(null);
+  <!-- Quiz logic -->
+  <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", () => {
+      const container = document.getElementById("quiz-container");
 
-      const [verifyId, setVerifyId] = useState("");
-      const [verifyResult, setVerifyResult] = useState(null);
+      // Load questions from questions.js
+      questions.forEach((q, index) => {
+        const qDiv = document.createElement("div");
+        qDiv.className = "p-4 bg-white rounded shadow";
 
-      const [passwordStrength, setPasswordStrength] = useState("");
-      const [hashResult, setHashResult] = useState("");
+        // Question text
+        const questionEl = document.createElement("p");
+        questionEl.className = "font-semibold mb-2";
+        questionEl.textContent = `${index + 1}. ${q.question}`;
+        qDiv.appendChild(questionEl);
 
-      const canvasRef = useRef(null);
+        // Choices
+        q.choices.forEach((choice, cIndex) => {
+          const label = document.createElement("label");
+          label.className = "block mb-1 cursor-pointer";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `q${index}`;
+          input.value = choice;
+          input.className = "mr-2";
+          label.appendChild(input);
+          label.appendChild(document.createTextNode(choice));
+          qDiv.appendChild(label);
+        });
 
-      /* ---------------- QUESTIONS ---------------- */
-      useEffect(() => {
-        const shuffled = [...window.ALL_QUESTIONS]
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 20);
-        setQuestions(shuffled);
-      }, []);
+        container.appendChild(qDiv);
+      });
 
-      /* ---------------- TIMER ---------------- */
-      useEffect(() => {
-        if (view !== "test") return;
-
-        const t = setInterval(() => {
-          setTimeLeft(prev => {
-            if (prev <= 1) {
-              submitExam();
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-
-        return () => clearInterval(t);
-      }, [view]);
-
-      /* ---------------- PASSWORD TOOL ---------------- */
-      const checkPassword = (pw) => {
-        let s = 0;
-        if (pw.length >= 8) s++;
-        if (/[A-Z]/.test(pw)) s++;
-        if (/[0-9]/.test(pw)) s++;
-        if (/[^A-Za-z0-9]/.test(pw)) s++;
-        return ["Very Weak", "Weak", "Fair", "Good", "Strong"][s];
-      };
-
-      /* ---------------- HASH TOOL ---------------- */
-      const hashText = async (text) => {
-        const data = new TextEncoder().encode(text);
-        const hash = await crypto.subtle.digest("SHA-256", data);
-        setHashResult(
-          [...new Uint8Array(hash)]
-            .map(b => b.toString(16).padStart(2, "0"))
-            .join("")
-        );
-      };
-
-      /* ---------------- CERTIFICATE ---------------- */
-      const submitExam = () => {
+      // Submit button logic
+      document.getElementById("submit-btn").addEventListener("click", () => {
         let score = 0;
-        answers.forEach((a, i) => a === questions[i].correct && score++);
+        questions.forEach((q, index) => {
+          const selected = document.querySelector(`input[name="q${index}"]:checked`);
+          if (selected && selected.value === q.answer) score++;
+        });
+        alert(`You scored ${score} / ${questions.length}`);
+      });
 
-        const pct = Math.round((score / questions.length) * 100);
-        const certData = {
-          id: "CSC-" + Math.random().toString(16).slice(2, 10).toUpperCase(),
-          name,
-          score,
-          pct,
-          date: new Date().toLocaleDateString()
-        };
-
-        localStorage.setItem(`cert:${certData.id}`, JSON.stringify(certData));
-        setCert(certData);
-        setView("result");
-      };
-
-      /* ---------------- CERT VERIFY ---------------- */
-      const verifyCert = () => {
-        const stored = localStorage.getItem(`cert:${verifyId}`);
-        if (!stored) {
-          setVerifyResult({ valid: false });
-        } else {
-          setVerifyResult({ valid: true, data: JSON.parse(stored) });
-        }
-      };
-
-      /* ---------------- CERT CANVAS ---------------- */
-      useEffect(() => {
-        if (!cert || !canvasRef.current) return;
-
-        const ctx = canvasRef.current.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, 800, 500);
-
-        ctx.fillStyle = "#1e3a8a";
-        ctx.font = "32px serif";
-        ctx.fillText("CyberCert Academy", 220, 80);
-
-        ctx.font = "22px serif";
-        ctx.fillText("Certificate of Completion", 250, 140);
-
-        ctx.font = "26px serif";
-        ctx.fillText(cert.name, 300, 220);
-
-        ctx.font = "18px serif";
-        ctx.fillText(`Score: ${cert.pct}%`, 330, 270);
-        ctx.fillText(`ID: ${cert.id}`, 300, 310);
-        ctx.fillText(`Issued: ${cert.date}`, 300, 350);
-      }, [cert]);
-
-      return (
-        <div className="max-w-5xl mx-auto p-6">
-          <h1 className="text-4xl font-bold text-blue-700 flex items-center gap-3 mb-6">
-            <Shield /> CyberCert Academy
-          </h1>
-
-          {view === "home" && (
-            <button
-              className="bg-blue-600 text-white px-6 py-3 rounded"
-              onClick={() => setView("start")}
-            >
-              Start Certification
-            </button>
-          )}
-
-          {view === "start" && (
-            <div className="space-y-4">
-              <input
-                className="border p-3 w-full"
-                placeholder="Full Name"
-                value={name}
-                onChange={e => setName(e.target.value)}
-              />
-              <button
-                className="bg-blue-600 text-white px-6 py-3 rounded"
-                onClick={() => setView("test")}
-              >
-                Begin Exam
-              </button>
-            </div>
-          )}
-
-          {view === "test" && questions.length > 0 && (
-            <div>
-              <p className="mb-2 font-semibold">
-                Time Left: {Math.floor(timeLeft / 60)}:
-                {String(timeLeft % 60).padStart(2, "0")}
-              </p>
-
-              <h2 className="text-xl mb-4">
-                {questions[current].q}
-              </h2>
-
-              {questions[current].options.map((o, i) => (
-                <button
-                  key={i}
-                  className="block w-full border p-3 mb-2 rounded"
-                  onClick={() => {
-                    const a = [...answers];
-                    a[current] = i;
-                    setAnswers(a);
-                  }}
-                >
-                  {o}
-                </button>
-              ))}
-
-              <button
-                className="mt-4 bg-green-600 text-white px-6 py-3 rounded"
-                onClick={() =>
-                  current < questions.length - 1
-                    ? setCurrent(current + 1)
-                    : submitExam()
-                }
-              >
-                {current === questions.length - 1 ? "Submit" : "Next"}
-              </button>
-            </div>
-          )}
-
-          {view === "result" && cert && (
-            <div className="mt-6">
-              <CheckCircle className="w-16 h-16 text-green-600 mb-4" />
-              <p className="text-xl font-semibold">{cert.name}</p>
-              <p>Score: {cert.pct}%</p>
-              <p>ID: {cert.id}</p>
-
-              <canvas ref={canvasRef} width="800" height="500" className="mt-4 border" />
-
-              <a
-                download="certificate.png"
-                href={canvasRef.current?.toDataURL()}
-                className="inline-flex items-center gap-2 mt-4 bg-blue-600 text-white px-4 py-2 rounded"
-              >
-                <Download /> Download Certificate
-              </a>
-            </div>
-          )}
-
-          {/* TOOLS */}
-          <div className="mt-12 border-t pt-6 space-y-6">
-            <div>
-              <h2 className="font-semibold mb-2">Password Strength</h2>
-              <input
-                className="border p-2 w-full"
-                onChange={e => setPasswordStrength(checkPassword(e.target.value))}
-              />
-              <p className="mt-2">{passwordStrength}</p>
-            </div>
-
-            <div>
-              <h2 className="font-semibold mb-2">SHA-256 Hash</h2>
-              <input
-                className="border p-2 w-full"
-                onChange={e => hashText(e.target.value)}
-              />
-              <p className="break-all mt-2">{hashResult}</p>
-            </div>
-
-            <div>
-              <h2 className="font-semibold mb-2">Verify Certificate</h2>
-              <input
-                className="border p-2 w-full mb-2"
-                placeholder="CSC-XXXXXXXX"
-                value={verifyId}
-                onChange={e => setVerifyId(e.target.value)}
-              />
-              <button
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-                onClick={verifyCert}
-              >
-                Verify
-              </button>
-
-              {verifyResult && (
-                <p className="mt-2">
-                  {verifyResult.valid ? "Valid Certificate" : "Invalid Certificate"}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    ReactDOM.createRoot(document.getElementById("root")).render(
-      <CyberSecurityCertApp />
-    );
+      // Initialize Lucide icons
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    });
   </script>
 </body>
 </html>

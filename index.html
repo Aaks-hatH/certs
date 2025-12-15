@@ -1,79 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CyberCert</title>
-  <!-- Tailwind CDN (fine for demo / portfolio) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons (plain JS) -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Favicon placeholder -->
-  <link rel="icon" href="data:,">
-</head>
-<body class="bg-gray-100 text-gray-800 font-sans">
-
-  <div class="max-w-3xl mx-auto p-6">
-    <h1 class="text-3xl font-bold mb-4">Quiz App</h1>
-    <div id="quiz-container" class="space-y-4">
-      <!-- Questions will be injected here -->
-    </div>
-    <button id="submit-btn" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-      Submit
-    </button>
-  </div>
-
-  <!-- Questions file -->
-  <script type="text/javascript" src="questions.js"></script>
-
-  <!-- Quiz logic -->
-  <script type="text/javascript">
-    document.addEventListener("DOMContentLoaded", () => {
-      const container = document.getElementById("quiz-container");
-
-      // Load questions from questions.js
-      questions.forEach((q, index) => {
-        const qDiv = document.createElement("div");
-        qDiv.className = "p-4 bg-white rounded shadow";
-
-        // Question text
-        const questionEl = document.createElement("p");
-        questionEl.className = "font-semibold mb-2";
-        questionEl.textContent = `${index + 1}. ${q.question}`;
-        qDiv.appendChild(questionEl);
-
-        // Choices
-        q.choices.forEach((choice, cIndex) => {
-          const label = document.createElement("label");
-          label.className = "block mb-1 cursor-pointer";
-          const input = document.createElement("input");
-          input.type = "radio";
-          input.name = `q${index}`;
-          input.value = choice;
-          input.className = "mr-2";
-          label.appendChild(input);
-          label.appendChild(document.createTextNode(choice));
-          qDiv.appendChild(label);
-        });
-
-        container.appendChild(qDiv);
-      });
-
-      // Submit button logic
-      document.getElementById("submit-btn").addEventListener("click", () => {
-        let score = 0;
-        questions.forEach((q, index) => {
-          const selected = document.querySelector(`input[name="q${index}"]:checked`);
-          if (selected && selected.value === q.answer) score++;
-        });
-        alert(`You scored ${score} / ${questions.length}`);
-      });
-
-      // Initialize Lucide icons
-      if (window.lucide) {
-        window.lucide.createIcons();
-      }
-    });
-  </script>
-</body>
-</html>
+   <html lang="en">
+     <head>
+       <meta charset="UTF-8" />
+       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+       <title>CyberCert Academy</title>
+     </head>
+     <body>
+       <div id="root"></div>
+       <script type="module" src="/src/main.jsx"></script>
+     </body>
+   </html>
